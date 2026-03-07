@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "self-improving-coding-agent"
+version = "0.1.0"
+description = "Minimal vertical slice of a self-improving coding agent with a single-iteration loop."
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.5.0",
+    "pytest>=7.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+]
+
+[project.scripts]
+agent = "agent.cli:main"
+

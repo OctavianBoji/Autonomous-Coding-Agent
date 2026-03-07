@@ -1,0 +1,6 @@
+{
+  "goal": "Fix square() so that square(3) == 9.",
+  "repo_path": "square_project",
+  "test_command": "pytest -q",
+  "allowlist_paths": []
+}

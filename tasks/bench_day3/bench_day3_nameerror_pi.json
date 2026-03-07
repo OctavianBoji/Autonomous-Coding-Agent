@@ -1,0 +1,6 @@
+{
+  "goal": "Fix NameError by defining PI constant used by circle_area.",
+  "repo_path": "nameerror_pi_project",
+  "test_command": "pytest -q",
+  "allowlist_paths": []
+}

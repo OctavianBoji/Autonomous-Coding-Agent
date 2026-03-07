@@ -1,0 +1,6 @@
+{
+  "goal": "Fix greet() TypeError by accepting the missing argument.",
+  "repo_path": "typeerror_greet_project",
+  "test_command": "pytest -q",
+  "allowlist_paths": []
+}

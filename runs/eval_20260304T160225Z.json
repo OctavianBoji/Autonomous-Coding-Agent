@@ -1,0 +1,44 @@
+[
+  {
+    "task_id": "bench_assert_add",
+    "passed": true,
+    "iterations": 2,
+    "time_ms": 1645,
+    "final_status": "PASS"
+  },
+  {
+    "task_id": "bench_attribute_calc",
+    "passed": true,
+    "iterations": 2,
+    "time_ms": 1539,
+    "final_status": "PASS"
+  },
+  {
+    "task_id": "bench_import_util",
+    "passed": true,
+    "iterations": 2,
+    "time_ms": 1590,
+    "final_status": "PASS"
+  },
+  {
+    "task_id": "bench_nameerror_pi",
+    "passed": true,
+    "iterations": 2,
+    "time_ms": 1540,
+    "final_status": "PASS"
+  },
+  {
+    "task_id": "bench_square",
+    "passed": true,
+    "iterations": 1,
+    "time_ms": 808,
+    "final_status": "PASS"
+  },
+  {
+    "task_id": "bench_typeerror_greet",
+    "passed": false,
+    "iterations": 2,
+    "time_ms": 1610,
+    "final_status": "aborted_repeated_failure"
+  }
+]

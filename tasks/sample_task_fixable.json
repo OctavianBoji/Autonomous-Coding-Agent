@@ -1,0 +1,7 @@
+{
+  "goal": "Fix the add() function so that the tests pass.",
+  "repo_path": "sample_project_fixable",
+  "test_command": "pytest -q",
+  "allowlist_paths": []
+}
+

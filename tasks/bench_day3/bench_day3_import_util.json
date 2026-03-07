@@ -1,0 +1,6 @@
+{
+  "goal": "Fix ImportError by providing a local util module with add().",
+  "repo_path": "import_util_project",
+  "test_command": "pytest -q",
+  "allowlist_paths": []
+}

@@ -1,0 +1,7 @@
+{
+  "goal": "Fix add() so that add(1, 2) == 3.",
+  "repo_path": "bench_assert_add_project",
+  "test_command": "pytest -q",
+  "allowlist_paths": []
+}
+

@@ -1,0 +1,7 @@
+{
+  "goal": "Fix greet() missing required positional argument.",
+  "repo_path": "bench_typeerror_greet_project",
+  "test_command": "pytest -q",
+  "allowlist_paths": []
+}
+
