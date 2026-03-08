@@ -1,0 +1,6 @@
+{
+  "goal": "Fix all bugs and implement missing features in BankAccount so every test passes. Bugs to fix: (1) deposit() accepts negative/zero amounts, (2) withdraw() ignores overdraft_limit, (3) transfer() is not implemented, (4) get_history() exposes internal list — return a copy, (5) net_flow() has inverted signs.",
+  "repo_path": "complex_bank",
+  "test_command": "pytest -q",
+  "allowlist_paths": ["bank.py"]
+}

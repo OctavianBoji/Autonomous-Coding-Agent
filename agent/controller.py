@@ -115,7 +115,7 @@ def run_task(task_path: Path, max_iterations: int | None = None) -> None:
             plan = next_plan
             next_plan = None
         else:
-            plan = provider.generate_initial_plan(task)
+            plan = provider.generate_initial_plan(task, workspace_root=run_paths.workspace_root)
 
         update_iteration_plan(run_paths.db_path, iteration_id, plan.model_dump_json())
 
