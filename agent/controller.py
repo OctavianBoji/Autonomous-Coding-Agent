@@ -64,11 +64,19 @@ def _write_summary(
     paths.summary_path.write_text("\n".join(content_lines), encoding="utf-8")
 
 
+def _log(msg: str) -> None:
+    print(f"[agent] {msg}", flush=True)
+
+
 def run_task(task_path: Path, max_iterations: int | None = None) -> None:
     """Run the agent loop for up to `max_iterations` iterations."""
     task = _load_task(task_path)
+    _log(f"Task loaded: {task_path.name}")
+    _log(f"Goal: {task.goal[:80]}{'...' if len(task.goal) > 80 else ''}")
+
     run_paths = prepare_run_directories(task_path)
     run_id = run_paths.run_id
+    _log(f"Run ID: {run_id}  |  workspace: {run_paths.workspace_root}")
 
     # Initialize persistence and determine whether this is a fresh run or a resume.
     is_resume = run_paths.db_path.exists()
@@ -79,11 +87,19 @@ def run_task(task_path: Path, max_iterations: int | None = None) -> None:
     # Prepare workspace only for fresh runs; resume keeps the existing workspace.
     if not is_resume:
         repo_src = task.resolved_repo_path(task_path)
+        _log(f"Copying repo from {repo_src} → workspace")
         copy_repo_to_workspace(repo_src, run_paths.workspace_root)
+    else:
+        _log("Resuming existing run (workspace preserved)")
 
     max_iters = max_iterations or settings.default_max_iterations
     if max_iters < 1:
         max_iters = 1
+
+    provider = get_model_provider()
+    _log(f"Model provider: {type(provider).__name__}")
+    _log(f"Max iterations: {max_iters}")
+    print(flush=True)
 
     last_error_signature: str | None = None
     repeat_count = 0
@@ -92,9 +108,9 @@ def run_task(task_path: Path, max_iterations: int | None = None) -> None:
     next_plan: Plan | None = None
     history: list[Reflection] = []
 
-    provider = get_model_provider()
-
     for iteration_index in range(max_iters):
+        _log(f"{'─' * 50}")
+        _log(f"Iteration {iteration_index + 1}/{max_iters}")
         log_event(
             run_paths.trace_path,
             event_type="iteration_start",
@@ -112,10 +128,16 @@ def run_task(task_path: Path, max_iterations: int | None = None) -> None:
         )
 
         if next_plan is not None:
+            _log("  Using fix plan from previous reflection")
             plan = next_plan
             next_plan = None
         else:
+            _log("  Calling generate_initial_plan() → LLM reads workspace files")
             plan = provider.generate_initial_plan(task, workspace_root=run_paths.workspace_root)
+
+        _log(f"  Plan: \"{plan.description[:70]}\"")
+        _log(f"  Patches proposed: {len(plan.patches)}" +
+             (f" → {[p.relative_path for p in plan.patches]}" if plan.patches else " (none)"))
 
         update_iteration_plan(run_paths.db_path, iteration_id, plan.model_dump_json())
 
@@ -127,7 +149,9 @@ def run_task(task_path: Path, max_iterations: int | None = None) -> None:
             payload=plan.model_dump(),
         )
 
+        _log("  Calling patches_are_safe() → safety check")
         safe = patches_are_safe(plan.patches)
+        _log(f"  Safety result: {'SAFE' if safe else 'UNSAFE'}")
         log_event(
             run_paths.trace_path,
             event_type="safety_checked",
@@ -158,6 +182,7 @@ def run_task(task_path: Path, max_iterations: int | None = None) -> None:
             return
 
         if plan.patches:
+            _log(f"  Calling apply_patches() → writing {len(plan.patches)} file(s)")
             apply_patches(run_paths, iteration_id=iteration_id, patches=plan.patches)
             log_event(
                 run_paths.trace_path,
@@ -167,6 +192,7 @@ def run_task(task_path: Path, max_iterations: int | None = None) -> None:
                 payload={"patch_count": len(plan.patches)},
             )
 
+        _log(f"  Calling run_tests() → {task.test_command or settings.default_test_command}")
         test_result = run_tests(
             run_paths.workspace_root,
             test_command=task.test_command or settings.default_test_command,
@@ -183,6 +209,7 @@ def run_task(task_path: Path, max_iterations: int | None = None) -> None:
         )
 
         latest_test_output = (test_result.stdout + "\n" + test_result.stderr).strip()
+        _log(f"  Tests: {'PASS ✓' if test_result.success else 'FAIL ✗'}  (exit={test_result.exit_code}, {test_result.duration_ms}ms)")
 
         if test_result.success:
             update_iteration_status(run_paths.db_path, iteration_id, status="success")
@@ -195,6 +222,7 @@ def run_task(task_path: Path, max_iterations: int | None = None) -> None:
                 iteration_index=iteration_index,
                 payload={"status": "success", "stop_reason": "success"},
             )
+            _log(f"\n  ══ DONE: all tests passed in {iteration_index + 1} iteration(s) ══")
             _write_summary(
                 run_paths,
                 task=task,
@@ -206,6 +234,7 @@ def run_task(task_path: Path, max_iterations: int | None = None) -> None:
             return
 
         # Failed tests: generate reflection and possibly trip the circuit breaker.
+        _log("  Calling reflect_and_propose() → LLM analyses failures")
         reflection = provider.reflect_and_propose(
             task=task,
             test_result=test_result,
@@ -215,6 +244,10 @@ def run_task(task_path: Path, max_iterations: int | None = None) -> None:
         # Use the reflection's concrete fix plan as the starting point for
         # the next iteration.
         next_plan = reflection.fix_plan
+        _log(f"  Root cause: \"{reflection.root_cause[:80]}\"")
+        _log(f"  Fix plan: \"{reflection.fix_plan.description[:70]}\"")
+        _log(f"  Patches in fix plan: {len(reflection.fix_plan.patches)}" +
+             (f" → {[p.relative_path for p in reflection.fix_plan.patches]}" if reflection.fix_plan.patches else " (none)"))
         insert_reflection(run_paths.db_path, iteration_id=iteration_id, reflection=reflection)
         history.append(reflection)
 
@@ -234,6 +267,7 @@ def run_task(task_path: Path, max_iterations: int | None = None) -> None:
         else:
             repeat_count = 1
 
+        _log(f"  Error signature: {reflection.error_signature}  (repeat count: {repeat_count})")
         if repeat_count >= settings.circuit_breaker_repeats:
             # Circuit breaker: same failure signature repeated too many times.
             update_iteration_status(
@@ -243,6 +277,7 @@ def run_task(task_path: Path, max_iterations: int | None = None) -> None:
             )
             update_iteration_stop_reason(run_paths.db_path, iteration_id, "repeated_failure")
             final_status = "aborted_repeated_failure"
+            _log(f"\n  ══ CIRCUIT BREAKER: same error repeated {repeat_count}x — aborting ══")
             log_event(
                 run_paths.trace_path,
                 event_type="iteration_end",

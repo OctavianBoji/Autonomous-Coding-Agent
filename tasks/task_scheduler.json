@@ -1,0 +1,6 @@
+{
+  "goal": "Fix all bugs in the Scheduler class so every test passes. Bugs to fix: (1) add_task() never calls _has_cycle() so cycles go undetected, (2) _has_cycle() traverses dependents instead of dependencies and cannot detect cycles, (3) get_ready_tasks() compares dependency status against Status.READY instead of Status.DONE, (4) execution_order() counts outgoing edges instead of incoming edges for in-degree, producing wrong topological order, (5) fail() does not propagate failure to transitive dependents.",
+  "repo_path": "task_scheduler",
+  "test_command": "pytest -q",
+  "allowlist_paths": ["scheduler.py"]
+}
